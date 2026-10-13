@@ -690,7 +690,7 @@ void bot_analyze() {
 
     int step = 0;
     int best_profit = 0;
-    while (true) {
+    while (step >= 0) {
         // Check new moves
         for (; step < analyze_steps_max_count; step++) {
 
@@ -753,6 +753,7 @@ void bot_analyze() {
         step--; // step = analyze_steps_max_count, so we need step 1 back
         cout << "1 " << step << " " << possible_moves_count[step] << " " << current_color_number << endl;
 
+        /*
         for (int i = 0; i < possible_moves_count[step]; i++) {
             cout << possible_moves[step][i][2] << " ";
             move_piece_only_board(possible_moves[step][i][0], possible_moves[step][i][2], possible_moves[step][i][1], true);
@@ -764,27 +765,26 @@ void bot_analyze() {
             move_piece_only_board_undo(true);
             sync_game_state(game_states[step], false);
         }
+        */
 
-        step--;
-        reverse_color();
-        for (; step >= 0; step--) {
-            current_position[step]++;
-            if (current_position[step] < possible_moves_count[step]) {
+        while (true) {
+            step--;
+            if (step >= 0) {
+                reverse_color();
+                current_position[step]++;
+                if (current_position[step] < possible_moves_count[step]) {
+                    sync_game_state(game_states[step], true);
+                    step++;
+                    break;
+                }
+            } 
+            else {
                 break;
             }
-            reverse_color();
         }
         for (int i = 0; i < 30; i++) {
             screen_update();
         }
-
-        if (step >= 0) {
-            sync_game_state(game_states[step], true);
-        }
-        else {
-            break;
-        }
-
     }
 
 }
