@@ -11,7 +11,7 @@ const float window_part_x = window_size_x_float / 8;
 const float window_part_y = window_size_y_float / 8;
 
 
-sf::RenderWindow window(sf::VideoMode(window_size_x + 50, window_size_y), "Chess");
+sf::RenderWindow window(sf::VideoMode(window_size_x + 100, window_size_y), "Chess");
 sf::CircleShape Place_piece_sprite(window_part_x * 0.2);
 
 
@@ -511,6 +511,9 @@ sf::RectangleShape Is_bot_playing_sprite;
 sf::RectangleShape Button_make_move;
 sf::RectangleShape Button_reverse_sides;
 sf::RectangleShape Button_restart;
+sf::RectangleShape Advantage_white_sprite;
+sf::RectangleShape Advantage_black_sprite;
+sf::Text Advantage_value_sprite("0", font, 25);
 
 sf::Vector2f from_square_to_vector2(int square) {
     int endX = square % board_size_x; int endY = square / board_size_x;
@@ -678,6 +681,11 @@ void sync_game_state(Game_state game_state, bool is_sync_board_pieces) {
 }
 
 
+float calculate_advantage() {
+    return 0.f;
+}
+
+
 void bot_analyze() {
     static const int analyze_steps_max_count = 2;
     static const int most_possible_moves_in_one_turn = 218;
@@ -689,7 +697,9 @@ void bot_analyze() {
     int possible_moves[analyze_steps_max_count][most_possible_moves_in_one_turn][available_squares_data_count+1];
 
     int step = 0;
-    int best_profit = 0;
+    int advantage;
+    int advantage_best_white = -99999;
+    int advantage_best_black = 99999;
     while (step >= 0) {
         // Check new moves
         for (; step < analyze_steps_max_count; step++) {
@@ -716,29 +726,25 @@ void bot_analyze() {
             current_position[step] = 0;
 
             // Adding all possible moves
-            possible_moves_count[step] = 0;
-            int first_piece_i = -1;
+            int move_count = 0;
 
             for (int i = 0; i < board_size; i++) {
                 if (check_is_square_mine(i)) {
                     get_available_square(i);
                     if (available_squares_count > 0) {
                         for (int j = 0; j < available_squares_count; j++) {
-                            possible_moves[step][possible_moves_count[step]][0] = available_squares[j][0];
-                            possible_moves[step][possible_moves_count[step]][1] = available_squares[j][1];
+                            possible_moves[step][move_count][0] = available_squares[j][0];
+                            possible_moves[step][move_count][1] = available_squares[j][1];
 
-                            possible_moves[step][possible_moves_count[step]][2] = i;
-                            possible_moves_count[step]++;
-                        }
-
-                        if (first_piece_i == -1) {
-                            first_piece_i = i;
+                            possible_moves[step][move_count][2] = i;
+                            move_count++;
                         }
                     }
                 }
             }
+            possible_moves_count[step] = move_count;
 
-            if (possible_moves_count[step] > 0) {
+            if (move_count > 0) {
                 if (step < analyze_steps_max_count - 1) {
                     move_piece(0, first_piece_i);
                 }
@@ -753,19 +759,28 @@ void bot_analyze() {
         step--; // step = analyze_steps_max_count, so we need step 1 back
         cout << "1 " << step << " " << possible_moves_count[step] << " " << current_color_number << endl;
 
-        /*
+        
         for (int i = 0; i < possible_moves_count[step]; i++) {
             cout << possible_moves[step][i][2] << " ";
+
+            // SADIHYAHYAGYCSAVCASVCYVSAYCVACA
+            // Replace by REAL MOVE and REVERSE_COLOR()
             move_piece_only_board(possible_moves[step][i][0], possible_moves[step][i][2], possible_moves[step][i][1], true);
 
-            int profit = 0;
-            // Count profit
-            //if ((is_move_white && profit > best_profit))
+            advantage = calculate_advantage();
+            if (is_move_white) {
+                if (advantage > advantage_best_white) {
+                    advantage_best_white = advantage;
+                }
+            } else {
+                if (advantage < advantage_best_black) {
+                    advantage_best_black = advantage;
+                }
+            }
 
             move_piece_only_board_undo(true);
             sync_game_state(game_states[step], false);
         }
-        */
 
         while (true) {
             step--;
